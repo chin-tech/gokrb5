@@ -12,11 +12,11 @@ import (
 	"os"
 
 	"github.com/gorilla/sessions"
-	"github.com/jcmturner/goidentity/v6"
-	"github.com/jcmturner/gokrb5/v8/keytab"
-	"github.com/jcmturner/gokrb5/v8/service"
-	"github.com/jcmturner/gokrb5/v8/spnego"
-	"github.com/jcmturner/gokrb5/v8/test/testdata"
+	"github.com/chin-tech/goidentity/v6"
+	"github.com/chin-tech/gokrb5/v8/keytab"
+	"github.com/chin-tech/gokrb5/v8/service"
+	"github.com/chin-tech/gokrb5/v8/spnego"
+	"github.com/chin-tech/gokrb5/v8/test/testdata"
 )
 
 const (

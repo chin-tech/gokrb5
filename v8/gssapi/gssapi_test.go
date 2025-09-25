@@ -3,7 +3,7 @@ package gssapi
 import (
 	"testing"
 
-	"github.com/jcmturner/gofork/encoding/asn1"
+	"github.com/chin-tech/gofork/encoding/asn1"
 	"github.com/stretchr/testify/assert"
 )
 

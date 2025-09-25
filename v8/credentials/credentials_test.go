@@ -3,7 +3,7 @@ package credentials
 import (
 	"testing"
 
-	"github.com/jcmturner/goidentity/v6"
+	"github.com/chin-tech/goidentity/v6"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -9,17 +9,17 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jcmturner/gokrb5/v8/config"
-	"github.com/jcmturner/gokrb5/v8/credentials"
-	"github.com/jcmturner/gokrb5/v8/crypto"
-	"github.com/jcmturner/gokrb5/v8/crypto/etype"
-	"github.com/jcmturner/gokrb5/v8/iana/errorcode"
-	"github.com/jcmturner/gokrb5/v8/iana/etypeID"
-	"github.com/jcmturner/gokrb5/v8/iana/nametype"
-	"github.com/jcmturner/gokrb5/v8/keytab"
-	"github.com/jcmturner/gokrb5/v8/krberror"
-	"github.com/jcmturner/gokrb5/v8/messages"
-	"github.com/jcmturner/gokrb5/v8/types"
+	"github.com/chin-tech/gokrb5/v8/config"
+	"github.com/chin-tech/gokrb5/v8/credentials"
+	"github.com/chin-tech/gokrb5/v8/crypto"
+	"github.com/chin-tech/gokrb5/v8/crypto/etype"
+	"github.com/chin-tech/gokrb5/v8/iana/errorcode"
+	"github.com/chin-tech/gokrb5/v8/iana/etypeID"
+	"github.com/chin-tech/gokrb5/v8/iana/nametype"
+	"github.com/chin-tech/gokrb5/v8/keytab"
+	"github.com/chin-tech/gokrb5/v8/krberror"
+	"github.com/chin-tech/gokrb5/v8/messages"
+	"github.com/chin-tech/gokrb5/v8/types"
 )
 
 // Client side configuration and state.
@@ -164,6 +164,7 @@ func NewFromCCache(c *credentials.CCache, krb5conf *config.Config, settings ...f
 func (cl *Client) Key(etype etype.EType, kvno int, krberr *messages.KRBError) (types.EncryptionKey, int, error) {
 	if cl.Credentials.HasKeytab() && etype != nil {
 		return cl.Credentials.Keytab().GetEncryptionKey(cl.Credentials.CName(), cl.Credentials.Domain(), kvno, etype.GetETypeID())
+	}
 	if cl.Credentials.HasPassword() {
 		if krberr != nil && krberr.ErrorCode == errorcode.KDC_ERR_PREAUTH_REQUIRED {
 			var pas types.PADataSequence
@@ -178,42 +179,42 @@ func (cl *Client) Key(etype etype.EType, kvno int, krberr *messages.KRBError) (t
 		return key, 0, err
 	}
 	if cl.Credentials.HasHash() {
-			et, err := crypto.GetEtype(etypeID.RC4_HMAC)
-			if err != nil {
-				return types.EncryptionKey{}, 0, err
-			}
-			if krberr != nil && krberr.ErrorCode == errorcode.KDC_ERR_PREAUTH_REQUIRED {
-				var pas types.PADataSequence
-				err := pas.Unmarshal(krberr.EData)
-				if err != nil {
-					return types.EncryptionKey{}, 0, fmt.Errorf("could not get PAData from KrbError to generate NTHash: %v", err)
-				}
-
-				key, _, err := crypto.GetKeyFromHash(cl.Credentials.Hash(), krberr.CName, krberr.CRealm, et.GetETypeID(), pas)
-				return key, 0, err
-			}
-			key, _, err := crypto.GetKeyFromHash(cl.Credentials.Hash(), cl.Credentials.CName(), cl.Credentials.Domain(), et.GetETypeID(), types.PADataSequence{})
-			return key, 0 , err
+		et, err := crypto.GetEtype(etypeID.RC4_HMAC)
+		if err != nil {
+			return types.EncryptionKey{}, 0, err
 		}
-	
-		if cl.Credentials.HasAESKey() {
-			if len(cl.Credentials.AESKey()) == AES_256_LENGTH {
-				et, err = crypto.GetEtype(etypeID.AES256_CTS_HMAC_SHA1_96)
-			} else {
-				et, err = crypto.GetEtype(etypeID.AES128_CTS_HMAC_SHA1_96)
-			}
+		if krberr != nil && krberr.ErrorCode == errorcode.KDC_ERR_PREAUTH_REQUIRED {
+			var pas types.PADataSequence
+			err := pas.Unmarshal(krberr.EData)
 			if err != nil {
-				return types.EncryptionKey{}, 0, err
+				return types.EncryptionKey{}, 0, fmt.Errorf("could not get PAData from KrbError to generate NTHash: %v", err)
 			}
-			if krberr != nil && krberr.ErrorCode == errorcode.KDC_ERR_PREAUTH_REQUIRED {
-				var pas types.PADataSequence
-				err := pas.Unmarshal(krberr.EData)
-				if err != nil {
-					return types.EncryptionKey{}, 0, fmt.Errorf("could not get PAData from KRBError to generate key from AESKey: %v", err)
-				}
 
-			}
+			key, _, err := crypto.GetKeyFromHash(cl.Credentials.Hash(), krberr.CName, krberr.CRealm, et.GetETypeID(), pas)
+			return key, 0, err
 		}
+		key, _, err := crypto.GetKeyFromHash(cl.Credentials.Hash(), cl.Credentials.CName(), cl.Credentials.Domain(), et.GetETypeID(), types.PADataSequence{})
+		return key, 0, err
+	}
+
+	if cl.Credentials.HasAESKey() {
+		if len(cl.Credentials.AESKey()) == AES_256_LENGTH {
+			et, err = crypto.GetEtype(etypeID.AES256_CTS_HMAC_SHA1_96)
+		} else {
+			et, err = crypto.GetEtype(etypeID.AES128_CTS_HMAC_SHA1_96)
+		}
+		if err != nil {
+			return types.EncryptionKey{}, 0, err
+		}
+		if krberr != nil && krberr.ErrorCode == errorcode.KDC_ERR_PREAUTH_REQUIRED {
+			var pas types.PADataSequence
+			err := pas.Unmarshal(krberr.EData)
+			if err != nil {
+				return types.EncryptionKey{}, 0, fmt.Errorf("could not get PAData from KRBError to generate key from AESKey: %v", err)
+			}
+
+		}
+	}
 	return types.EncryptionKey{}, 0, errors.New("credential has neither keytab or password to generate key")
 }
 

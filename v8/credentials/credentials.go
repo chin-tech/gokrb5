@@ -28,6 +28,8 @@ type Credentials struct {
 	cname           types.PrincipalName
 	keytab          *keytab.Keytab
 	password        string
+	hash            []byte
+	aeskey          []byte
 	attributes      map[string]interface{}
 	validUntil      time.Time
 	authenticated   bool
@@ -123,14 +125,48 @@ func (c *Credentials) WithPassword(password string) *Credentials {
 	return c
 }
 
+func (c *Credentials) WithHash(hash []byte) *Credentials {
+	c.hash = hash
+	c.keytab = keytab.New()
+	return c
+}
+
+func (c *Credentials) WithAESKey(key []byte) *Credentials {
+	c.aeskey = key
+	c.keytab = keytab.New()
+	return c
+}
+
 // Password returns the credential's password.
 func (c *Credentials) Password() string {
 	return c.password
 }
 
+func (c *Credentials) Hash() []byte {
+	return c.hash
+}
+
+func (c *Credentials) AESKey() []byte {
+	return c.aeskey
+}
+
 // HasPassword queries if the Credentials has a password defined.
 func (c *Credentials) HasPassword() bool {
 	if c.password != "" {
+		return true
+	}
+	return false
+}
+
+func (c *Credentials) HasHash() bool {
+	if c.hash != nil {
+		return true
+	}
+	return false
+}
+
+func (c *Credentials) HasAESKey() bool {
+	if c.aeskey != nil {
 		return true
 	}
 	return false

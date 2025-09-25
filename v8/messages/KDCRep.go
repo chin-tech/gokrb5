@@ -228,7 +228,21 @@ func (k *ASRep) DecryptEncPart(c *credentials.Credentials) (types.EncryptionKey,
 			return key, krberror.Errorf(err, krberror.DecryptingError, "error decrypting AS_REP encrypted part")
 		}
 	}
-	if !c.HasKeytab() && !c.HasPassword() {
+
+	if c.HasHash() {
+		key, _, err = crypto.GetKeyFromHash(c.Hash(), k.CName, k.CRealm, k.EncPart.EType, k.PAData)
+		if err != nil {
+			return key, krberror.Errorf(err, krberror.DecryptingError, "HasHash(): error decrytpying AS_REP encrypyted part")
+		}
+	}
+
+	if c.HasAESKey() {
+		key, _, err = crypto.GetKeyFromHash(c.AESKey(), k.CName, k.CRealm, k.EncPart.EType, k.PAData)
+		if err != nil {
+			return key, krberror.Errorf(err, krberror.DecryptingError, "HasAESKey(): error decrytpying AS_REP encrypyted part")
+		}
+	}
+	if !c.HasKeytab() && !c.HasPassword() && !c.HasHash() && !c.HasAESKey() {
 		return key, krberror.NewErrorf(krberror.DecryptingError, "no secret available in credentials to perform decryption of AS_REP encrypted part")
 	}
 	b, err := crypto.DecryptEncPart(k.EncPart, key, keyusage.AS_REP_ENCPART)

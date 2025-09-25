@@ -14,6 +14,7 @@ import (
 	"github.com/jcmturner/gokrb5/v8/crypto"
 	"github.com/jcmturner/gokrb5/v8/crypto/etype"
 	"github.com/jcmturner/gokrb5/v8/iana/errorcode"
+	"github.com/jcmturner/gokrb5/v8/iana/etypeID"
 	"github.com/jcmturner/gokrb5/v8/iana/nametype"
 	"github.com/jcmturner/gokrb5/v8/keytab"
 	"github.com/jcmturner/gokrb5/v8/krberror"
@@ -29,6 +30,12 @@ type Client struct {
 	sessions    *sessions
 	cache       *Cache
 }
+
+const (
+	NT_HASH_LENGTH = 16
+	AES_128_LENGTH = 16
+	AES_256_LENGTH = 32
+)
 
 // NewWithPassword creates a new client from a password credential.
 // Set the realm to empty string to use the default realm from config.
@@ -57,6 +64,44 @@ func NewWithKeytab(username, realm string, kt *keytab.Keytab, krb5conf *config.C
 		},
 		cache: NewCache(),
 	}
+}
+
+func NewWithHash(username, realm string, hash []byte, krb5conf *config.Config, settings ...func(*Settings)) *Client {
+	creds := credentials.New(username, realm)
+	c := &Client{
+		Config:   krb5conf,
+		settings: NewSettings(settings...),
+		sessions: &sessions{
+			Entries: make(map[string]*session),
+		},
+		cache: NewCache(),
+	}
+	if len(hash) != NT_HASH_LENGTH {
+		fmt.Printf("[-] Invalid hash provided: %v\n,", hash)
+		return nil
+	}
+	c.WithHash(hash)
+	return c
+
+}
+
+func NewWithKey(username, realm string, key []byte, krb5conf *config.Config, settings ...func(*Settings)) *Client {
+	creds := credentials.New(username, realm)
+	c := &Client{
+		Config:   krb5conf,
+		settings: NewSettings(settings...),
+		sessions: &sessions{
+			Entries: make(map[string]*session),
+		},
+		cache: NewCache(),
+	}
+	if len(key) != AES_128_LENGTH && len(key) != AES_256_LENGTH {
+		fmt.Printf("[-] Invalid AES Key length: %v", key)
+		return nil
+	}
+	c.Credentials = creds.WithAESKey(key)
+	return c
+
 }
 
 // NewFromCCache create a client from a populated client cache.
@@ -119,7 +164,7 @@ func NewFromCCache(c *credentials.CCache, krb5conf *config.Config, settings ...f
 func (cl *Client) Key(etype etype.EType, kvno int, krberr *messages.KRBError) (types.EncryptionKey, int, error) {
 	if cl.Credentials.HasKeytab() && etype != nil {
 		return cl.Credentials.Keytab().GetEncryptionKey(cl.Credentials.CName(), cl.Credentials.Domain(), kvno, etype.GetETypeID())
-	} else if cl.Credentials.HasPassword() {
+	if cl.Credentials.HasPassword() {
 		if krberr != nil && krberr.ErrorCode == errorcode.KDC_ERR_PREAUTH_REQUIRED {
 			var pas types.PADataSequence
 			err := pas.Unmarshal(krberr.EData)
@@ -132,6 +177,43 @@ func (cl *Client) Key(etype etype.EType, kvno int, krberr *messages.KRBError) (t
 		key, _, err := crypto.GetKeyFromPassword(cl.Credentials.Password(), cl.Credentials.CName(), cl.Credentials.Domain(), etype.GetETypeID(), types.PADataSequence{})
 		return key, 0, err
 	}
+	if cl.Credentials.HasHash() {
+			et, err := crypto.GetEtype(etypeID.RC4_HMAC)
+			if err != nil {
+				return types.EncryptionKey{}, 0, err
+			}
+			if krberr != nil && krberr.ErrorCode == errorcode.KDC_ERR_PREAUTH_REQUIRED {
+				var pas types.PADataSequence
+				err := pas.Unmarshal(krberr.EData)
+				if err != nil {
+					return types.EncryptionKey{}, 0, fmt.Errorf("could not get PAData from KrbError to generate NTHash: %v", err)
+				}
+
+				key, _, err := crypto.GetKeyFromHash(cl.Credentials.Hash(), krberr.CName, krberr.CRealm, et.GetETypeID(), pas)
+				return key, 0, err
+			}
+			key, _, err := crypto.GetKeyFromHash(cl.Credentials.Hash(), cl.Credentials.CName(), cl.Credentials.Domain(), et.GetETypeID(), types.PADataSequence{})
+			return key, 0 , err
+		}
+	
+		if cl.Credentials.HasAESKey() {
+			if len(cl.Credentials.AESKey()) == AES_256_LENGTH {
+				et, err = crypto.GetEtype(etypeID.AES256_CTS_HMAC_SHA1_96)
+			} else {
+				et, err = crypto.GetEtype(etypeID.AES128_CTS_HMAC_SHA1_96)
+			}
+			if err != nil {
+				return types.EncryptionKey{}, 0, err
+			}
+			if krberr != nil && krberr.ErrorCode == errorcode.KDC_ERR_PREAUTH_REQUIRED {
+				var pas types.PADataSequence
+				err := pas.Unmarshal(krberr.EData)
+				if err != nil {
+					return types.EncryptionKey{}, 0, fmt.Errorf("could not get PAData from KRBError to generate key from AESKey: %v", err)
+				}
+
+			}
+		}
 	return types.EncryptionKey{}, 0, errors.New("credential has neither keytab or password to generate key")
 }
 
@@ -144,7 +226,7 @@ func (cl *Client) IsConfigured() (bool, error) {
 		return false, errors.New("client does not have a define realm")
 	}
 	// Client needs to have either a password, keytab or a session already (later when loading from CCache)
-	if !cl.Credentials.HasPassword() && !cl.Credentials.HasKeytab() {
+	if !cl.Credentials.HasPassword() && !cl.Credentials.HasKeytab() && !cl.Credentials.HasHash() && cl.Credentials.HasAESKey() {
 		authTime, _, _, _, err := cl.sessionTimes(cl.Credentials.Domain())
 		if err != nil || authTime.IsZero() {
 			return false, errors.New("client has neither a keytab nor a password set and no session")

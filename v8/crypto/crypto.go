@@ -135,6 +135,20 @@ func GetKeyFromPassword(passwd string, cname types.PrincipalName, realm string, 
 	return key, et, nil
 }
 
+func GetKeyFromHash(hash []byte, cname types.PrincipalName, realm string, etype int32, pas types.PADataSequence) (types.EncryptionKey, etype.EType, error) {
+
+	var key types.EncryptionKey
+	et, err := GetEtype(etype)
+	if err != nil {
+		return key, et, fmt.Errorf("Failure determining encryption type: %v", err)
+	}
+	key = types.EncryptionKey{
+		KeyType:  etype,
+		KeyValue: hash,
+	}
+	return key, et, nil
+}
+
 // GetEncryptedData encrypts the data provided and returns and EncryptedData type.
 // Pass a usage value of zero to use the key provided directly rather than deriving one.
 func GetEncryptedData(plainBytes []byte, key types.EncryptionKey, usage uint32, kvno int) (types.EncryptedData, error) {

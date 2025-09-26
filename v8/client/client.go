@@ -198,18 +198,16 @@ func (cl *Client) Key(etype etype.EType, kvno int, krberr *messages.KRBError) (t
 	}
 
 	if cl.Credentials.HasAESKey() {
-		et, err := crypto.GetEtype(etypeID.DES3_CBC_MD5)
+		et, err := crypto.GetEtype(etypeID.AES128_CTS_HMAC_SHA1_96)
 		if err != nil {
 			return types.EncryptionKey{}, 0, fmt.Errorf("Failed initializtion")
 		}
 
 		if len(cl.Credentials.AESKey()) == AES_256_LENGTH {
 			et, err = crypto.GetEtype(etypeID.AES256_CTS_HMAC_SHA1_96)
-		} else {
-			et, err = crypto.GetEtype(etypeID.AES128_CTS_HMAC_SHA1_96)
-		}
-		if err != nil {
-			return types.EncryptionKey{}, 0, err
+			if err != nil {
+				return types.EncryptionKey{}, 0, err
+			}
 		}
 		if krberr != nil && krberr.ErrorCode == errorcode.KDC_ERR_PREAUTH_REQUIRED {
 			var pas types.PADataSequence
@@ -219,6 +217,9 @@ func (cl *Client) Key(etype etype.EType, kvno int, krberr *messages.KRBError) (t
 			}
 
 		}
+		key, _, err := crypto.GetKeyFromHash(cl.Credentials.AESKey(), cl.Credentials.CName(), cl.Credentials.Domain(), et.GetETypeID(), types.PADataSequence{})
+		return key, 0, err
+
 	}
 	return types.EncryptionKey{}, 0, errors.New("credential has neither keytab or password to generate key")
 }

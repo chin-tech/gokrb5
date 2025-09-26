@@ -257,7 +257,7 @@ func (cl *Client) Login() error {
 	if ok, err := cl.IsConfigured(); !ok {
 		return err
 	}
-	if !cl.Credentials.HasPassword() && !cl.Credentials.HasKeytab() {
+	if !cl.Credentials.HasPassword() && !cl.Credentials.HasKeytab() && !cl.Credentials.HasHash() && !cl.Credentials.HasAESKey() {
 		_, endTime, _, _, err := cl.sessionTimes(cl.Credentials.Domain())
 		if err != nil {
 			return krberror.Errorf(err, krberror.KRBMsgError, "no user credentials available and error getting any existing session")

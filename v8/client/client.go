@@ -80,7 +80,7 @@ func NewWithHash(username, realm string, hash []byte, krb5conf *config.Config, s
 		fmt.Printf("[-] Invalid hash provided: %v\n,", hash)
 		return nil
 	}
-	c.WithHash(hash)
+	c.Credentials = creds.WithHash(hash)
 	return c
 
 }
@@ -198,6 +198,11 @@ func (cl *Client) Key(etype etype.EType, kvno int, krberr *messages.KRBError) (t
 	}
 
 	if cl.Credentials.HasAESKey() {
+		et, err := crypto.GetEtype(etypeID.DES3_CBC_MD5)
+		if err != nil {
+			return types.EncryptionKey{}, 0, fmt.Errorf("Failed initializtion")
+		}
+
 		if len(cl.Credentials.AESKey()) == AES_256_LENGTH {
 			et, err = crypto.GetEtype(etypeID.AES256_CTS_HMAC_SHA1_96)
 		} else {

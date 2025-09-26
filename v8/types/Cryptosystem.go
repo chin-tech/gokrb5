@@ -3,7 +3,7 @@ package types
 import (
 	"crypto/rand"
 
-	"github.com/chin-tech/gofork/encoding/asn1"
+	"github.com/jcmturner/gofork/encoding/asn1"
 	"github.com/chin-tech/gokrb5/v8/crypto/etype"
 )
 

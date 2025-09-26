@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chin-tech/gofork/encoding/asn1"
+	"github.com/jcmturner/gofork/encoding/asn1"
 	"github.com/chin-tech/gokrb5/v8/iana/etypeID"
 )
 

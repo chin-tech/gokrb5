@@ -206,7 +206,7 @@ The ``httpServer.go`` source file in the examples directory shows how this can b
 
 ##### Validating Users and Accessing Users' Details
 If authentication succeeds then the request's context will have a credentials objected added to it.
-This object implements the ``github.com/chin-tech/goidentity/identity`` interface.
+This object implements the ``github.com/jcmturner/goidentity/identity`` interface.
 If Microsoft Active Directory is used as the KDC then additional ADCredentials are available in the 
 ``credentials.Attributes`` map under the key ``credentials.AttributeKeyADCredentials``. 
 For example the SIDs of the users group membership are available and can be used by your application for authorization.

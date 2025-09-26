@@ -13,7 +13,7 @@ import (
 	"net/http/httptest"
 	"os"
 
-	"github.com/chin-tech/goidentity/v6"
+	"github.com/jcmturner/goidentity/v6"
 	"github.com/chin-tech/gokrb5/v8/client"
 	"github.com/chin-tech/gokrb5/v8/config"
 	"github.com/chin-tech/gokrb5/v8/keytab"

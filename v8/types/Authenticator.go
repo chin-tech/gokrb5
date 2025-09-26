@@ -8,7 +8,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/chin-tech/gofork/encoding/asn1"
+	"github.com/jcmturner/gofork/encoding/asn1"
 	"github.com/chin-tech/gokrb5/v8/asn1tools"
 	"github.com/chin-tech/gokrb5/v8/iana"
 	"github.com/chin-tech/gokrb5/v8/iana/asnAppTag"

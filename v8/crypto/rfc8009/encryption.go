@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/chin-tech/aescts/v2"
+	"github.com/jcmturner/aescts/v2"
 	"github.com/chin-tech/gokrb5/v8/crypto/common"
 	"github.com/chin-tech/gokrb5/v8/crypto/etype"
 	"github.com/chin-tech/gokrb5/v8/iana/etypeID"

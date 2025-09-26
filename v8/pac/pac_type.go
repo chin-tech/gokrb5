@@ -9,7 +9,7 @@ import (
 	"github.com/chin-tech/gokrb5/v8/crypto"
 	"github.com/chin-tech/gokrb5/v8/iana/keyusage"
 	"github.com/chin-tech/gokrb5/v8/types"
-	"github.com/chin-tech/rpc/v2/mstypes"
+	"github.com/jcmturner/rpc/v2/mstypes"
 )
 
 const (

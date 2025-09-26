@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 
-	"github.com/chin-tech/gofork/x/crypto/pbkdf2"
+	"github.com/jcmturner/gofork/x/crypto/pbkdf2"
 	"github.com/chin-tech/gokrb5/v8/crypto/etype"
 )
 

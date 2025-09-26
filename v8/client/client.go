@@ -156,6 +156,10 @@ func NewFromCCache(c *credentials.CCache, krb5conf *config.Config, settings ...f
 	return cl, nil
 }
 
+func (cl *Client) HasCredentials() bool {
+	return cl.Credentials.HasPassword() || cl.Credentials.HasKeytab() || cl.Credentials.HasHash() || cl.Credentials.HasAESKey()
+}
+
 // Key returns the client's encryption key for the specified encryption type and its kvno (kvno of zero will find latest).
 // The key can be retrieved either from the keytab or generated from the client's password.
 // If the client has both a keytab and a password defined the keytab is favoured as the source for the key
@@ -233,10 +237,10 @@ func (cl *Client) IsConfigured() (bool, error) {
 		return false, errors.New("client does not have a define realm")
 	}
 	// Client needs to have either a password, keytab or a session already (later when loading from CCache)
-	if !cl.Credentials.HasPassword() && !cl.Credentials.HasKeytab() && !cl.Credentials.HasHash() && cl.Credentials.HasAESKey() {
+	if !cl.HasCredentials() {
 		authTime, _, _, _, err := cl.sessionTimes(cl.Credentials.Domain())
 		if err != nil || authTime.IsZero() {
-			return false, errors.New("client has neither a keytab nor a password set and no session")
+			return false, errors.New("client has neither a keytab, password, or hash set and no session")
 		}
 	}
 	if !cl.Config.LibDefaults.DNSLookupKDC {
@@ -257,7 +261,7 @@ func (cl *Client) Login() error {
 	if ok, err := cl.IsConfigured(); !ok {
 		return err
 	}
-	if !cl.Credentials.HasPassword() && !cl.Credentials.HasKeytab() && !cl.Credentials.HasHash() && !cl.Credentials.HasAESKey() {
+	if !cl.HasCredentials() {
 		_, endTime, _, _, err := cl.sessionTimes(cl.Credentials.Domain())
 		if err != nil {
 			return krberror.Errorf(err, krberror.KRBMsgError, "no user credentials available and error getting any existing session")
